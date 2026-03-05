@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import pg from 'pg';
 
 // Interface for common DB operations
@@ -14,11 +13,12 @@ export interface DBAdapter {
 class SQLiteAdapter implements DBAdapter {
   private db: any;
 
-  constructor() {
-    this.db = new Database('travel.db');
-  }
+  constructor() {}
 
   async init() {
+    const { default: Database } = await import('better-sqlite3');
+    this.db = new Database('travel.db');
+
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,11 +159,22 @@ class PostgresAdapter implements DBAdapter {
 
 // Factory
 export function getDB(): DBAdapter {
+  // Log environment status (without exposing secrets)
+  console.log('Checking DB configuration...');
+  console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL);
+  console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+
   if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
-    console.log('Using PostgreSQL database');
+    console.log('Using PostgreSQL database adapter');
     return new PostgresAdapter(process.env.POSTGRES_URL || process.env.DATABASE_URL!);
   } else {
-    console.log('Using SQLite database');
+    // If we are in production (Vercel) but no Postgres URL, this is likely an error
+    if (process.env.NODE_ENV === 'production') {
+      console.error('ERROR: Running in production but no POSTGRES_URL or DATABASE_URL found.');
+      console.error('Please ensure you have connected a database in Vercel Storage settings.');
+    }
+    console.log('Using SQLite database adapter (fallback)');
     return new SQLiteAdapter();
   }
 }

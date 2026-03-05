@@ -13,12 +13,11 @@ export class GoogleDriveService {
     this.folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
 
     if (clientEmail && privateKey && this.folderId) {
-      const auth = new google.auth.JWT(
-        clientEmail,
-        undefined,
-        privateKey,
-        SCOPES
-      );
+      const auth = new google.auth.JWT({
+        email: clientEmail,
+        key: privateKey,
+        scopes: SCOPES,
+      });
       this.driveClient = google.drive({ version: 'v3', auth });
     }
   }
