@@ -4,8 +4,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { GoogleDriveService } from './src/services/drive';
-import { getDB } from './src/db';
+import { GoogleDriveService } from './src/services/drive.js';
+import { getDB } from './src/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,8 +19,20 @@ if (!fs.existsSync(uploadDir)) {
 const driveService = new GoogleDriveService();
 const db = getDB();
 
-// Initialize DB tables
-db.init().catch(err => console.error('Failed to init DB:', err));
+// Initialize DB tables and start server
+const startServer = async () => {
+  try {
+    await db.init();
+    console.log('Database initialized');
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to init DB:', err);
+    process.exit(1);
+  }
+};
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -166,6 +178,4 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+startServer();
