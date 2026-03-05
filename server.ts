@@ -7,10 +7,11 @@ import { GoogleDriveService } from './src/services/drive.js';
 import { getDB } from './src/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
 // Ensure uploads directory exists (only for local fallback)
 const uploadDir = path.join(__dirname, 'uploads');
-if (process.env.NODE_ENV !== 'production' && !fs.existsSync(uploadDir)) {
+if (!isProduction && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
@@ -40,7 +41,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Use /tmp directory if in production/vercel environment to avoid read-only errors
-    const dest = process.env.NODE_ENV === 'production' ? '/tmp' : uploadDir;
+    const dest = isProduction ? '/tmp' : uploadDir;
     cb(null, dest);
   },
   filename: (req, file, cb) => {
@@ -160,7 +161,7 @@ app.post('/api/posts', upload.array('photos', 5), async (req, res) => {
 });
 
 // Vite middleware for development
-if (process.env.NODE_ENV !== 'production') {
+if (!isProduction) {
   const { createServer: createViteServer } = await import('vite');
   const vite = await createViteServer({
     server: { middlewareMode: true },
